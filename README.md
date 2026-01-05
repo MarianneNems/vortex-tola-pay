@@ -1,32 +1,39 @@
-# Vortex TOLA Pay Gateway v4.0.0
+# Vortex Crypto Payment Gateway v4.1.0
 
-**WooCommerce payment gateway for TOLA and USDC cryptocurrency payments**
+**WooCommerce payment gateway for USDC cryptocurrency payments**
 
 ---
 
 ## Overview
 
 Complete payment gateway allowing customers to pay with:
-- **TOLA** - Native incentive token on Solana
-- **USDC** - Stablecoin for platform utility
+- **USDC** - Primary stablecoin for all purchases (1 USDC = $1 USD)
+- **Backend TOLA** - Hidden incentive system (rewards)
 
 Integrates with WooCommerce checkout and connects to Solana blockchain for real-time payment verification.
+
+**Integrated with:** Vortex USDC Transaction Manager for seamless balance management.
 
 ---
 
 ## Features
 
-### Supported Cryptocurrencies:
-- ✅ TOLA (Incentive token)
-- ✅ USDC (Utility token)
-- ✅ SOL (Native Solana)
+### Primary Payment Method:
+- ✅ **USDC** (Stablecoin - user-facing, 1:1 USD value)
+
+### Backend Integration:
+- ✅ Vortex USDC Transaction Manager
+- ✅ TOLA incentive rewards (hidden)
+- ✅ Automatic balance crediting
 
 ### Payment Flow:
-1. Customer selects "TOLA/USDC Pay" at checkout
+1. Customer selects "USDC Cryptocurrency" at checkout
 2. System generates QR code + Phantom deep link
-3. Customer pays with Phantom wallet
+3. Customer pays USDC with Phantom wallet
 4. On-chain verification via Solana RPC
-5. Order auto-completes after confirmation
+5. USDC credited to customer account
+6. Order auto-completes after confirmation
+7. **BONUS:** Customer earns hidden TOLA rewards for purchase!
 
 ### Security:
 - Real-time blockchain verification
@@ -46,24 +53,34 @@ Integrates with WooCommerce checkout and connects to Solana blockchain for real-
 
 ### Setup:
 
-1. **Upload Plugin:**
+1. **Rename Plugin Folder:**
    ```
-   Upload to: wp-content/plugins/vortex-tola-pay/
+   OLD: wp-content/plugins/vortex-tola-pay/
+   NEW: wp-content/plugins/vortex-crypto-payment/
    ```
 
-2. **Activate:**
+2. **Upload/Activate:**
    ```
-   WordPress Admin → Plugins → Activate "Vortex TOLA Pay Gateway"
+   WordPress Admin → Plugins → Activate "Vortex Crypto Payment Gateway"
    ```
 
 3. **Configure:**
    ```
-   WooCommerce → Settings → Payments → TOLA/USDC Pay
+   WooCommerce → Settings → Payments → USDC Cryptocurrency
    
-   Settings:
-   - Engine URL: https://vortex-engine-production.up.railway.app
-   - Treasury Wallet: Your Solana wallet address
+   Required Settings:
+   - Railway Backend URL: https://vortex-engine.railway.app
+   - Treasury Wallet: Your Solana wallet address (receives USDC)
+   - USDC Contract: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
    - Enable: Yes
+   ```
+
+4. **Integration:**
+   ```
+   This plugin works with:
+   - Vortex USDC Transaction Manager (for balance management)
+   - Vortex Railway Backend (for blockchain operations)
+   - Vortex AI Engine main plugin (for incentive rewards)
    ```
 
 ---
@@ -72,17 +89,21 @@ Integrates with WooCommerce checkout and connects to Solana blockchain for real-
 
 ### Required Settings:
 
-**Engine URL:**
-- Production: `https://vortex-engine-production.up.railway.app`
+**Railway Backend URL:**
+- Production: `https://vortex-engine.railway.app`
 - Development: `http://localhost:3000`
 
 **Treasury Wallet:**
-- Solana wallet address to receive payments
-- Must have token accounts for TOLA and USDC
+- Solana wallet address to receive USDC payments
+- Must have USDC token account configured
 
-**Payment Options:**
-- TOLA: Native incentive token
-- USDC: Stablecoin payments
+**USDC Contract:**
+- Mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`
+- This is the official Solana USDC SPL token address
+
+**Payment Currency:**
+- Primary: USDC (all customer payments)
+- Backend: TOLA (incentive rewards - automatic)
 
 ---
 
@@ -93,12 +114,15 @@ This plugin requires the [vortex-engine backend](https://github.com/MarianneNems
 ### API Endpoints Used:
 
 ```
-POST /api/tola/transfer - Transfer TOLA tokens
 POST /api/usdc/transfer - Transfer USDC tokens
-GET /api/tola/balance/:wallet - Check TOLA balance
 GET /api/usdc/balance/:wallet - Check USDC balance
 POST /wc/webhooks/order-created - Order webhook
 POST /wc/webhooks/order-paid - Payment webhook
+GET /tola/payments/status/:order_id - Check payment status
+
+Backend Only (TOLA Incentives):
+POST /api/tola/incentive - Distribute TOLA rewards (hidden)
+GET /api/tola/balance/:wallet - Check TOLA incentive balance (hidden)
 ```
 
 ---
@@ -130,13 +154,23 @@ POST /wc/webhooks/order-paid - Payment webhook
 ### Order Meta Keys:
 
 ```php
-_tola_payment_intent_id - Payment intent ID
-_tola_transaction_signature - Blockchain TX signature
-_tola_payment_status - Payment status
-_tola_wallet_address - Customer wallet
-_tola_amount - Amount paid
-_payment_currency - TOLA or USDC
+_usdc_payment_intent_id - Payment intent ID
+_usdc_transaction_signature - Blockchain TX signature
+_usdc_payment_status - Payment status
+_usdc_wallet_address - Customer wallet
+_usdc_amount - Amount paid in USDC
+_payment_currency - USDC
+_vortex_transaction_id - Link to vortex_transactions table
 ```
+
+### Integration with Vortex System:
+
+When payment completes:
+1. ✅ Credits USDC to user via Vortex_USDC_Transaction_Manager
+2. ✅ Records in wp_vortex_transactions table
+3. ✅ Awards hidden TOLA incentive (optional)
+4. ✅ Updates order status to 'completed'
+5. ✅ Sends confirmation emails
 
 ---
 
@@ -202,6 +236,17 @@ tail -f wp-content/debug.log | grep "TOLA PAY"
 ---
 
 ## Changelog
+
+### v4.1.0 (January 5, 2026)
+- **MAJOR UPDATE:** Renamed from "TOLA Pay" to "Vortex Crypto Payment"
+- **PRIMARY CURRENCY:** USDC (stablecoin, user-facing)
+- **SECONDARY:** TOLA (hidden incentive system)
+- Integrated with Vortex_USDC_Transaction_Manager
+- Credits USDC directly to user accounts
+- Compatible with vortex-ai-engine v4.0.0
+- Updated UI/UX to show USDC
+- Enhanced Railway backend integration
+- Auto-rewards TOLA incentives (hidden)
 
 ### v4.0.0 (January 4, 2026)
 - Added USDC support alongside TOLA

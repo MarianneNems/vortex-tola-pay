@@ -1,21 +1,27 @@
 <?php
 /**
- * Plugin Name: Vortex TOLA Pay Gateway
- * Description: WooCommerce payment gateway for TOLA and USDC cryptocurrency payments
- * Version: 4.0.0
- * Author: Vortex AI
+ * Plugin Name: Vortex Crypto Payment Gateway
+ * Plugin URI: https://github.com/MarianneNems/Vortexartec-ai-art-gen-web3-engine
+ * Description: WooCommerce payment gateway for USDC cryptocurrency payments on Solana blockchain. TOLA incentive system for rewards.
+ * Version: 4.1.0
+ * Author: Vortex AI Team
+ * Author URI: https://vortexartec.com
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * WC requires at least: 5.0
  * WC tested up to: 8.0
+ * Text Domain: vortex-crypto-payment
+ * Domain Path: /languages
  * 
  * @package VortexAIEngine
  * 
- * Changelog v4.0.0:
- * - Added USDC support alongside TOLA
- * - Users can pay with either TOLA or USDC
- * - Real-time balance checking for both tokens
- * - Backward compatible with existing TOLA payments
+ * Changelog v4.1.0:
+ * - PRIMARY: USDC payment gateway (user-facing)
+ * - SECONDARY: TOLA incentive system (hidden rewards)
+ * - Integrated with Vortex USDC Transaction Manager
+ * - Compatible with vortex-ai-engine main plugin
+ * - Real-time blockchain verification
+ * - Non-custodial architecture
  */
 
 if (!defined('ABSPATH')) {
@@ -28,30 +34,30 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
 }
 
 /**
- * Add TOLA Pay gateway to WooCommerce
+ * Add Vortex Crypto Payment gateway to WooCommerce
  */
-add_filter('woocommerce_payment_gateways', 'vortex_add_tola_pay_gateway');
+add_filter('woocommerce_payment_gateways', 'vortex_add_crypto_payment_gateway');
 
-function vortex_add_tola_pay_gateway($gateways) {
-    $gateways[] = 'WC_Gateway_TOLA_Pay';
+function vortex_add_crypto_payment_gateway($gateways) {
+    $gateways[] = 'WC_Gateway_Vortex_Crypto';
     return $gateways;
 }
 
 /**
- * Initialize TOLA Pay gateway
+ * Initialize Vortex Crypto Payment gateway
  */
-add_action('plugins_loaded', 'vortex_init_tola_pay_gateway');
+add_action('plugins_loaded', 'vortex_init_crypto_payment_gateway');
 
-function vortex_init_tola_pay_gateway() {
+function vortex_init_crypto_payment_gateway() {
     
-    class WC_Gateway_TOLA_Pay extends WC_Payment_Gateway {
+    class WC_Gateway_Vortex_Crypto extends WC_Payment_Gateway {
         
         public function __construct() {
-            $this->id = 'tola_pay';
+            $this->id = 'vortex_crypto_pay';
             $this->icon = '';
             $this->has_fields = true;
-            $this->method_title = 'TOLA/USDC Pay';
-            $this->method_description = 'Accept payments in TOLA or USDC cryptocurrency via Solana blockchain';
+            $this->method_title = 'USDC Cryptocurrency';
+            $this->method_description = 'Accept USDC stablecoin payments via Solana blockchain. Fast, secure, and transparent.';
             
             // Load settings
             $this->init_form_fields();
@@ -77,28 +83,42 @@ function vortex_init_tola_pay_gateway() {
                 'enabled' => array(
                     'title' => 'Enable/Disable',
                     'type' => 'checkbox',
-                    'label' => 'Enable TOLA Pay',
+                    'label' => 'Enable USDC Crypto Payments',
                     'default' => 'yes'
                 ),
                 'title' => array(
                     'title' => 'Title',
                     'type' => 'text',
                     'description' => 'Payment method title shown to customers',
-                    'default' => 'TOLA Cryptocurrency',
+                    'default' => 'USDC Cryptocurrency',
                     'desc_tip' => true
                 ),
                 'description' => array(
                     'title' => 'Description',
                     'type' => 'textarea',
                     'description' => 'Payment method description shown to customers',
-                    'default' => 'Pay securely with TOLA tokens on Solana blockchain. $1 = 1 TOLA.',
+                    'default' => 'Pay securely with USDC stablecoin on Solana blockchain. Fast, secure, 1:1 USD value.',
                     'desc_tip' => true
                 ),
                 'engine_url' => array(
-                    'title' => 'Engine URL',
+                    'title' => 'Railway Backend URL',
                     'type' => 'text',
-                    'description' => 'Vortex Engine base URL (e.g., http://localhost:3000)',
-                    'default' => 'http://localhost:3000',
+                    'description' => 'Vortex Engine Railway URL (e.g., https://vortex-engine.railway.app)',
+                    'default' => get_option('vortex_railway_backend_url', 'https://vortex-engine.railway.app'),
+                    'desc_tip' => true
+                ),
+                'treasury_wallet' => array(
+                    'title' => 'Treasury Wallet Address',
+                    'type' => 'text',
+                    'description' => 'Solana wallet address to receive USDC payments',
+                    'default' => '',
+                    'desc_tip' => true
+                ),
+                'usdc_contract' => array(
+                    'title' => 'USDC Contract Address',
+                    'type' => 'text',
+                    'description' => 'Solana USDC SPL token address',
+                    'default' => 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
                     'desc_tip' => true
                 )
             );
@@ -111,7 +131,10 @@ function vortex_init_tola_pay_gateway() {
             $order = wc_get_order($order_id);
             
             // Mark as pending payment
-            $order->update_status('pending', 'Awaiting TOLA payment');
+            $order->update_status('pending', 'Awaiting USDC cryptocurrency payment');
+            
+            // Add order note
+            $order->add_order_note('USDC payment initiated via Solana blockchain');
             
             // Reduce stock
             wc_reduce_stock_levels($order_id);
@@ -146,15 +169,15 @@ function vortex_init_tola_pay_gateway() {
             
             // Display payment interface
             ?>
-            <div class="vortex-tola-payment" style="max-width: 600px; margin: 40px auto; font-family: 'Montserrat', sans-serif;">
+            <div class="vortex-crypto-payment" style="max-width: 600px; margin: 40px auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                 
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 40px; text-align: center; color: white; margin-bottom: 30px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 40px; text-align: center; color: white; margin-bottom: 30px; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);">
                     <h2 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 800;">Complete Your Payment</h2>
                     <div style="font-size: 48px; font-weight: 900; margin: 20px 0;">
-                        <?php echo number_format($intent['amountTOLA'], 2); ?> TOLA
+                        <?php echo number_format($intent['amountUSDC'] ?? $intent['amountTOLA'] ?? $order->get_total(), 2); ?> USDC
                     </div>
                     <div style="font-size: 18px; opacity: 0.9;">
-                        = $<?php echo number_format($intent['amountUSD'], 2); ?> USD
+                        ≈ $<?php echo number_format($order->get_total(), 2); ?> USD
                     </div>
                 </div>
                 
@@ -229,7 +252,7 @@ function vortex_init_tola_pay_gateway() {
                             }
                         })
                         .catch(error => {
-                            console.error('[TOLA PAY] Poll error:', error);
+                            console.error('[Vortex Crypto Payment] Poll error:', error);
                         });
                 }, 3000); // Poll every 3 seconds
                 
@@ -278,21 +301,44 @@ function vortex_init_tola_pay_gateway() {
             ));
             
             if (is_wp_error($response)) {
-                error_log('[TOLA PAY] Engine request error: ' . $response->get_error_message());
+                error_log('[Vortex Crypto Payment] Engine request error: ' . $response->get_error_message());
                 return false;
             }
             
             $body = json_decode(wp_remote_retrieve_body($response), true);
             
             if (!$body || !$body['success']) {
-                error_log('[TOLA PAY] Engine response error');
+                error_log('[Vortex Crypto Payment] Engine response error');
                 return false;
             }
             
             return $body['data'];
         }
+        
+        /**
+         * Integration with Vortex USDC Transaction Manager
+         */
+        public function credit_usdc_to_account($user_id, $amount, $order_id) {
+            // Check if USDC Transaction Manager is available
+            if (class_exists('Vortex_USDC_Transaction_Manager')) {
+                $transaction_manager = Vortex_USDC_Transaction_Manager::get_instance();
+                $result = $transaction_manager->add_usdc(
+                    $user_id,
+                    $amount,
+                    "WooCommerce Order #{$order_id}",
+                    ['order_id' => $order_id, 'source' => 'woocommerce_payment']
+                );
+                
+                if (!is_wp_error($result)) {
+                    error_log("[Vortex Crypto Payment] Credited {$amount} USDC to user {$user_id}");
+                    return true;
+                }
+            }
+            
+            return false;
+        }
     }
 }
 
-error_log('[TOLA PAY] Payment gateway loaded');
+error_log('[Vortex Crypto Payment] Payment gateway loaded successfully');
 
