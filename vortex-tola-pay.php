@@ -33,6 +33,12 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
     return;
 }
 
+// Load blockchain sync integration (v4.0.0)
+$blockchain_sync_file = plugin_dir_path(__FILE__) . 'includes/class-blockchain-sync-integration.php';
+if (file_exists($blockchain_sync_file)) {
+    require_once $blockchain_sync_file;
+}
+
 /**
  * Add Vortex Crypto Payment gateway to WooCommerce
  */
